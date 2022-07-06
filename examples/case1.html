@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app">
+      <h1>{{count.number}}</h1>
+      <Comp
+        disabled
+        disable-elevation
+        :count="count"
+        :a-b-c="undefined"
+        -hs-fe="wwee"
+        onHiDen="123"
+        @hello="hello"
+        @hello-world="count=3"
+        @hello-hello-world="count=3"
+        @a-b-c-d="count=3"
+        @onload="count=3"
+      >
+        aaabbbccc
+        <template #header>header</template>
+        <template #left-panel>left panel</template>
+      </Comp>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "https://cdn.jsdelivr.net/npm/vue@3.2.37/dist/vue.esm-browser.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import hfcToVue from "../dist/index.js";
+      import { createApp, h } from "vue";
+      class HFC {
+        static propTypes = {
+          attrs: {
+            disabled: { t: "#b" },
+            disableElevation: { t: "#b" },
+            aBC: {},
+            HsFe: {},
+          },
+          events: {
+            helloWorld: {},
+            helloHelloWorld: {},
+          },
+          slots: {
+            default: {},
+            header: {},
+            leftPanel: {},
+          },
+        };
+        constructor(props) {
+          console.log(props.attrs);
+          console.log(props.events);
+          console.log(props.slots);
+          console.log(props.others);
+        }
+        connected() {}
+      }
+
+      const Comp = hfcToVue(HFC);
+      createApp({
+        data() {
+          return {
+            count: {
+              number: 0,
+            },
+          };
+        },
+        created() {
+          setInterval(() => {
+            this.count.number++;
+          }, 2000);
+        },
+        methods: { hello() {} },
+        components: {
+          Comp,
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>
