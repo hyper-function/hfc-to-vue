@@ -1,106 +1,88 @@
-import { onBeforeUpdate } from "vue";
 export default function (Vue) {
-    const { h, ref, watch, toRef, reactive, computed, Teleport, onMounted, onBeforeUnmount, defineComponent, } = Vue;
+    const { h, ref, reactive, Teleport, onMounted, onBeforeUpdate, onBeforeUnmount, defineComponent, } = Vue;
     return function hfcToVue(HFC) {
-        const propTypes = HFC.propTypes || {};
-        const propKeys = Object.keys(propTypes.attrs || {});
-        const eventKeys = Object.keys(propTypes.events || {});
-        const slotKeys = Object.keys(propTypes.slots || {});
-        const eventKeyMap = {};
-        for (let i = 0; i < eventKeys.length; i++) {
-            const key = eventKeys[i];
-            eventKeyMap["on" + key[0].toUpperCase() + key.slice(1)] = key;
+        const attrNames = HFC.propNames.attrs;
+        const eventNames = HFC.propNames.events;
+        const slotNames = HFC.propNames.slots;
+        const attrNameMap = new Map();
+        for (let i = 0; i < attrNames.length; i++) {
+            const name = attrNames[i];
+            attrNameMap.set(name, name);
+            attrNameMap.set(name.toLowerCase(), name);
+            attrNameMap.set(name.replace(/[A-Z]/g, "-$&").toLowerCase(), name);
         }
-        const slotKeyMap = {};
-        for (let i = 0; i < slotKeys.length; i++) {
-            const key = slotKeys[i];
-            slotKeyMap[key.toLowerCase()] = key;
+        const eventNameMap = new Map();
+        for (let i = 0; i < eventNames.length; i++) {
+            const name = eventNames[i];
+            const firstChar = name[0].toUpperCase();
+            const restChar = name.slice(1);
+            eventNameMap.set("on" + firstChar + restChar, name);
+            eventNameMap.set("on" + firstChar + restChar.toLowerCase(), name);
         }
-        const observeEventKeys = Object.keys(eventKeyMap);
+        const slotNameMap = new Map();
+        for (let i = 0; i < slotNames.length; i++) {
+            const name = slotNames[i];
+            slotNameMap.set(name, name);
+            slotNameMap.set(name.toLowerCase(), name);
+            slotNameMap.set(name.replace(/[A-Z]/g, "-$&").toLowerCase(), name);
+        }
         return defineComponent({
-            props: propKeys,
             inheritAttrs: false,
-            setup(vueProps, ctx) {
-                const container = ref();
-                const attrKeys = Object.keys(ctx.attrs);
-                function handleAttrs(isFirst) { }
-                handleAttrs(true);
-                onBeforeUpdate(() => handleAttrs(false));
-                const events = {};
-                if (observeEventKeys.length) {
-                    for (let i = 0; i < observeEventKeys.length; i++) {
-                        const key = observeEventKeys[i];
-                        const event = ctx.attrs[key];
-                        if (!event)
-                            continue;
-                        events[eventKeyMap[key]] = event;
-                    }
-                }
+            setup(_, ctx) {
                 const slots = {};
-                const renderedSlots = reactive({});
+                const teleports = reactive([]);
                 Object.keys(ctx.slots).forEach((slotKey) => {
-                    const key = slotKeyMap[slotKey.replace(/-/g, "").toLowerCase()];
-                    if (!key)
+                    const slotName = slotNameMap.get(slotKey);
+                    if (!slotName)
                         return;
                     const slot = ctx.slots[slotKey];
-                    slots[key] = function (container, args) {
-                        if (!container) {
-                            delete renderedSlots[key];
-                            return;
+                    slots[slotName] = function (container, args) {
+                        const vnode = h(Teleport, { to: container }, slot(args));
+                        vnode.name = slotName;
+                        const index = teleports.findIndex((item) => item.name === slotName);
+                        if (index === -1) {
+                            teleports.push(vnode);
                         }
-                        const slotItem = renderedSlots[key];
-                        if (!slotItem) {
-                            renderedSlots[key] = { name: key, container, slot: slot, args };
-                            return;
+                        else {
+                            teleports[index] = vnode;
                         }
-                        if (slotItem.container !== container) {
-                            slotItem.container = container;
-                        }
-                        slotItem.args = args;
                     };
                 });
-                let hfc;
-                const attrs = {};
-                for (let i = 0; i < propKeys.length; i++) {
-                    const key = propKeys[i];
-                    if (vueProps[key] == undefined)
-                        continue;
-                    let value = vueProps[key];
-                    if (value === "") {
-                        if (propTypes.attrs[key].t === "#b")
-                            value = true;
+                function getProps() {
+                    const attrs = {};
+                    const events = {};
+                    const others = {};
+                    const keys = Object.keys(ctx.attrs);
+                    for (let i = 0; i < keys.length; i++) {
+                        const key = keys[i];
+                        const attrName = attrNameMap.get(key);
+                        if (attrName) {
+                            attrs[attrName] = ctx.attrs[key];
+                            continue;
+                        }
+                        const eventName = eventNameMap.get(key);
+                        if (eventName) {
+                            events[eventName] = ctx.attrs[key];
+                            continue;
+                        }
+                        others[key] = ctx.attrs[key];
                     }
-                    attrs[key] = value;
-                    watch(toRef(vueProps, key), (curr, prev) => {
-                        var _a;
-                        console.log("change");
-                        console.log(curr);
-                        attrs[key] = curr;
-                        (_a = hfc.changed) === null || _a === void 0 ? void 0 : _a.call(hfc, "attr", key, prev, curr);
-                    }, { deep: true });
+                    return { attrs, events, others, slots };
                 }
-                hfc = new HFC({
-                    attrs,
-                    events,
-                    slots,
-                });
+                let hfc;
+                const container = ref();
                 onMounted(() => {
-                    hfc.connected(container.value);
+                    const props = getProps();
+                    hfc = new HFC(container.value, props);
+                });
+                onBeforeUpdate(() => {
+                    const props = getProps();
+                    hfc.changed(props);
                 });
                 onBeforeUnmount(() => {
-                    var _a;
-                    (_a = hfc.disconnected) === null || _a === void 0 ? void 0 : _a.call(hfc);
+                    hfc.disconnected();
                 });
-                const renderedSlotVnodes = computed(() => {
-                    return Object.keys(renderedSlots).map((key) => {
-                        const item = renderedSlots[key];
-                        return h(Teleport, { to: item.container }, item.slot(item.args));
-                    });
-                });
-                return () => [
-                    h(HFC.tag || "div", { ref: container }),
-                    renderedSlotVnodes.value,
-                ];
+                return () => [h(HFC.tag, { ref: container }), ...teleports];
             },
         });
     };

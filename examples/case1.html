@@ -10,21 +10,19 @@
     <div id="app">
       <h1>{{count.number}}</h1>
       <Comp
-        disabled
-        disable-elevation
-        :count="count"
-        :a-b-c="undefined"
-        -hs-fe="wwee"
-        onHiDen="123"
+        name="Terry Fei"
+        firstName="Terry"
+        LastName="Fei"
+        fitst-and-last-name="FT"
         @hello="hello"
         @hello-world="count=3"
-        @hello-hello-world="count=3"
-        @a-b-c-d="count=3"
-        @onload="count=3"
+        o="oo"
       >
-        aaabbbccc
+        <template #default="{a}">aaabbbccc {{a}}</template>
+
         <template #header>header</template>
         <template #left-panel>left panel</template>
+        <template #right-panel>left panel</template>
       </Comp>
     </div>
 
@@ -39,30 +37,34 @@
       import hfcToVue from "../dist/index.js";
       import { createApp, h } from "vue";
       class HFC {
-        static propTypes = {
-          attrs: {
-            disabled: { t: "#b" },
-            disableElevation: { t: "#b" },
-            aBC: {},
-            HsFe: {},
-          },
-          events: {
-            helloWorld: {},
-            helloHelloWorld: {},
-          },
-          slots: {
-            default: {},
-            header: {},
-            leftPanel: {},
-          },
+        static tag = "p";
+        static propNames = {
+          attrs: ["name", "firstName", "LastName", "fitstAndLastName"],
+          events: ["helloWorld", "hello"],
+          slots: ["default", "header", "leftPanel"],
         };
-        constructor(props) {
-          console.log(props.attrs);
-          console.log(props.events);
-          console.log(props.slots);
-          console.log(props.others);
+        constructor(container, props) {
+          const div = document.createElement("div");
+          container.appendChild(div);
+          let a = 3;
+          const t = setInterval(() => {
+            a = a + 1;
+            if (a > 10) {
+              div.remove();
+
+              clearInterval(t);
+              return;
+            }
+            props.slots.default(div, { a });
+          }, 1000);
+
+          // console.log(props.attrs);
+          // console.log(props.events);
+          // console.log(props.slots);
+          // console.log(props.others);
         }
-        connected() {}
+        changed(props) {}
+        disconnected() {}
       }
 
       const Comp = hfcToVue(HFC);
