@@ -74,7 +74,12 @@ export default function (Vue: typeof IVue) {
               continue;
             }
 
-            others[key] = ctx.attrs[key] as any;
+            let otherKey = key;
+            const otherValue = ctx.attrs[key] as any;
+            if (typeof otherValue === "function") {
+              otherKey = key[2].toLowerCase() + key.slice(3);
+            }
+            others[otherKey] = otherValue;
           }
 
           const slotKeys = Object.keys(ctx.slots);
