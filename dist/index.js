@@ -1,15 +1,14 @@
-import { h, ref, watch, toRef, Teleport, reactive, onMounted, onBeforeUpdate, onBeforeUnmount, defineComponent, computed, } from "vue";
+import { h, ref, toRaw, isProxy, reactive, Teleport, onMounted, onBeforeUpdate, onBeforeUnmount, defineComponent, } from "vue";
 import toVue from "./to-vue.js";
 export default toVue({
     h,
     ref,
-    watch,
-    toRef,
-    Teleport,
+    toRaw,
+    isProxy,
     reactive,
+    Teleport,
     onMounted,
     onBeforeUpdate,
     onBeforeUnmount,
     defineComponent,
-    computed,
 });

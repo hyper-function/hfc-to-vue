@@ -14,13 +14,14 @@
         firstName="Terry"
         LastName="Fei"
         fitst-and-last-name="FT"
+        :count="count"
         @hello="hello"
         @hello-world="count=3"
         o="oo"
       >
-        <template #default="{a}">aaabbbccc {{a}}</template>
+        <template #default="{a}">HOST: {{a}}</template>
 
-        <template #header>header</template>
+        <template v-if="showHeader" #header><h3>HHH</h3></template>
         <template #left-panel>left panel</template>
         <template #right-panel>left panel</template>
       </Comp>
@@ -39,31 +40,53 @@
       class HFC {
         static tag = "p";
         static propNames = {
-          attrs: ["name", "firstName", "LastName", "fitstAndLastName"],
+          attrs: ["name", "firstName", "LastName", "fitstAndLastName", "count"],
           events: ["helloWorld", "hello"],
           slots: ["default", "header", "leftPanel"],
         };
         constructor(container, props) {
-          const div = document.createElement("div");
-          container.appendChild(div);
-          let a = 3;
-          const t = setInterval(() => {
-            a = a + 1;
-            if (a > 10) {
-              div.remove();
+          this.container = container;
+          this.div = document.createElement("div");
+          this.span = document.createElement("span");
+          this.header = document.createElement("header");
+          this.span.innerText = "HFC:" + props.attrs.count.number;
+          container.appendChild(this.span);
+          container.appendChild(this.div);
+          this.a = 3;
+          // const t = setInterval(() => {
+          //   this.a += 1;
+          //   // if (a > 10) {
+          //   //   div.remove();
 
-              clearInterval(t);
-              return;
-            }
-            props.slots.default(div, { a });
-          }, 1000);
+          //   //   clearInterval(t);
+          //   //   return;
+          //   // }
+          //   props.slots.default(this.div, { a: this.a });
+          //   // props.attrs.count.number += 1;
+          // }, 1000);
+
+          props.slots.default(this.div, { a: this.a });
 
           // console.log(props.attrs);
           // console.log(props.events);
           // console.log(props.slots);
           // console.log(props.others);
         }
-        changed(props) {}
+        changed(props) {
+          console.log("changed");
+          console.log(props);
+          props.slots.default(this.div, { a: this.a + 1 });
+          this.span.innerText = "HFC:" + props.attrs.count.number;
+
+          if (props.slots.header) {
+            props.slots.header(this.header);
+            this.container.appendChild(this.header);
+          } else {
+            if (this.header.isConnected) {
+              this.container.removeChild(this.header);
+            }
+          }
+        }
         disconnected() {}
       }
 
@@ -74,12 +97,25 @@
             count: {
               number: 0,
             },
+            showHeader: false,
           };
         },
         created() {
-          setInterval(() => {
-            this.count.number++;
+          // setInterval(() => {
+          //   this.count.number++;
+          // }, 2000);
+          setTimeout(() => {
+            this.showHeader = true;
           }, 2000);
+          setTimeout(() => {
+            this.showHeader = false;
+          }, 4000);
+          setTimeout(() => {
+            this.showHeader = true;
+          }, 5000);
+          setTimeout(() => {
+            this.showHeader = false;
+          }, 6000);
         },
         methods: { hello() {} },
         components: {

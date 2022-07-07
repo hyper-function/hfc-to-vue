@@ -1,5 +1,5 @@
 export default function (Vue) {
-    const { h, ref, reactive, Teleport, onMounted, onBeforeUpdate, onBeforeUnmount, defineComponent, } = Vue;
+    const { h, ref, toRaw, isProxy, reactive, Teleport, onMounted, onBeforeUpdate, onBeforeUnmount, defineComponent, } = Vue;
     return function hfcToVue(HFC) {
         const attrNames = HFC.propNames.attrs;
         const eventNames = HFC.propNames.events;
@@ -29,35 +29,21 @@ export default function (Vue) {
         return defineComponent({
             inheritAttrs: false,
             setup(_, ctx) {
-                const slots = {};
                 const teleports = reactive([]);
-                Object.keys(ctx.slots).forEach((slotKey) => {
-                    const slotName = slotNameMap.get(slotKey);
-                    if (!slotName)
-                        return;
-                    const slot = ctx.slots[slotKey];
-                    slots[slotName] = function (container, args) {
-                        const vnode = h(Teleport, { to: container }, slot(args));
-                        vnode.name = slotName;
-                        const index = teleports.findIndex((item) => item.name === slotName);
-                        if (index === -1) {
-                            teleports.push(vnode);
-                        }
-                        else {
-                            teleports[index] = vnode;
-                        }
-                    };
-                });
-                function getProps() {
+                function ctxToProps() {
                     const attrs = {};
                     const events = {};
+                    const slots = {};
                     const others = {};
                     const keys = Object.keys(ctx.attrs);
                     for (let i = 0; i < keys.length; i++) {
                         const key = keys[i];
                         const attrName = attrNameMap.get(key);
                         if (attrName) {
-                            attrs[attrName] = ctx.attrs[key];
+                            let val = ctx.attrs[key];
+                            if (isProxy(val))
+                                val = toRaw(val);
+                            attrs[attrName] = val;
                             continue;
                         }
                         const eventName = eventNameMap.get(key);
@@ -67,16 +53,30 @@ export default function (Vue) {
                         }
                         others[key] = ctx.attrs[key];
                     }
+                    const slotKeys = Object.keys(ctx.slots);
+                    for (let i = 0; i < slotKeys.length; i++) {
+                        const slotKey = slotKeys[i];
+                        const slotName = slotNameMap.get(slotKey);
+                        if (!slotName)
+                            continue;
+                        const slot = ctx.slots[slotKey];
+                        slots[slotName] = function (container, args) {
+                            const vnode = h(Teleport, { to: container }, slot(args));
+                            vnode.name = slotName;
+                            const index = teleports.findIndex((item) => item.name === slotName);
+                            index === -1 ? teleports.push(vnode) : (teleports[index] = vnode);
+                        };
+                    }
                     return { attrs, events, others, slots };
                 }
                 let hfc;
                 const container = ref();
                 onMounted(() => {
-                    const props = getProps();
+                    const props = ctxToProps();
                     hfc = new HFC(container.value, props);
                 });
                 onBeforeUpdate(() => {
-                    const props = getProps();
+                    const props = ctxToProps();
                     hfc.changed(props);
                 });
                 onBeforeUnmount(() => {
