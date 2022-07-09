@@ -1,6 +1,7 @@
 import {
   h,
   ref,
+  watch,
   toRaw,
   isProxy,
   reactive,
@@ -16,6 +17,7 @@ import toVue from "./to-vue.js";
 export default toVue({
   h,
   ref,
+  watch,
   toRaw,
   isProxy,
   reactive,

@@ -4,6 +4,7 @@ export default function (Vue: typeof IVue) {
   const {
     h,
     ref,
+    watch,
     toRaw,
     isProxy,
     reactive,
@@ -49,6 +50,10 @@ export default function (Vue: typeof IVue) {
       inheritAttrs: false,
       setup(_, ctx) {
         const teleports = reactive<any[]>([]);
+        const isTeleportsChanged = ref(false);
+        watch(teleports, () => {
+          isTeleportsChanged.value = true;
+        });
 
         function ctxToProps() {
           const attrs: Record<string, any> = {};
@@ -89,11 +94,13 @@ export default function (Vue: typeof IVue) {
             if (!slotName) continue;
 
             const slot = ctx.slots[slotKey]!;
-            slots[slotName] = function (container: HTMLElement, args: any) {
+            slots[slotName] = function (container: HTMLElement, args?: any) {
+              args = args || {};
               const vnode = h(Teleport, { to: container }, slot(args));
-              (vnode as any).name = slotName;
+              const slotKey = args.key || slotName;
+              (vnode as any).key = slotKey;
               const index = teleports.findIndex(
-                (item) => (item as any).name === slotName
+                (item) => (item as any).key === slotKey
               );
 
               index === -1 ? teleports.push(vnode) : (teleports[index] = vnode);
@@ -111,6 +118,12 @@ export default function (Vue: typeof IVue) {
         });
 
         onBeforeUpdate(() => {
+          // update teleports should not trigger changed event
+          if (isTeleportsChanged.value) {
+            isTeleportsChanged.value = false;
+            return;
+          }
+
           const props = ctxToProps();
           hfc.changed(props);
         });
