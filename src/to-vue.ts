@@ -16,9 +16,9 @@ export default function (Vue: typeof IVue) {
   } = Vue;
 
   return function hfcToVue(HFC: typeof HyperFunctionComponent) {
-    const attrNames = HFC.propNames.attrs;
-    const eventNames = HFC.propNames.events;
-    const slotNames = HFC.propNames.slots;
+    const attrNames = HFC.props[0];
+    const eventNames = HFC.props[1];
+    const slotNames = HFC.props[2];
 
     const attrNameMap: Map<string, string> = new Map();
     for (let i = 0; i < attrNames.length; i++) {
@@ -49,7 +49,15 @@ export default function (Vue: typeof IVue) {
     return defineComponent({
       inheritAttrs: false,
       setup(_, ctx) {
-        const teleports = reactive<any[]>([]);
+        const teleports = reactive<
+          {
+            key: string;
+            container: Element;
+            args: Record<string, any>;
+            slotFn: IVue.Slot;
+          }[]
+        >([]);
+
         const isTeleportsChanged = ref(false);
         watch(teleports, () => {
           isTeleportsChanged.value = true;
@@ -94,16 +102,16 @@ export default function (Vue: typeof IVue) {
             if (!slotName) continue;
 
             const slot = ctx.slots[slotKey]!;
-            slots[slotName] = function (container: HTMLElement, args?: any) {
+            slots[slotName] = function (container: Element, args?: any) {
               args = args || {};
-              const vnode = h(Teleport, { to: container }, slot(args));
               const slotKey = args.key || slotName;
-              (vnode as any).key = slotKey;
-              const index = teleports.findIndex(
-                (item) => (item as any).key === slotKey
-              );
+              const teleport = { key: slotKey, args, container, slotFn: slot };
 
-              index === -1 ? teleports.push(vnode) : (teleports[index] = vnode);
+              const index = teleports.findIndex((item) => item.key === slotKey);
+
+              index === -1
+                ? teleports.push(teleport)
+                : (teleports[index] = teleport);
             };
           }
 
@@ -111,7 +119,7 @@ export default function (Vue: typeof IVue) {
         }
 
         let hfc: HyperFunctionComponent;
-        const container = ref<HTMLElement>();
+        const container = ref<Element>();
         onMounted(() => {
           const props = ctxToProps();
           hfc = new HFC(container.value!, props);
@@ -132,7 +140,16 @@ export default function (Vue: typeof IVue) {
           hfc.disconnected();
         });
 
-        return () => [h(HFC.tag, { ref: container }), ...teleports];
+        return () => [
+          h(HFC.tag, { ref: container }),
+          teleports.map((item) =>
+            h(
+              Teleport,
+              { to: item.container, key: item.key },
+              item.slotFn(item.args)
+            )
+          ),
+        ];
       },
     });
   };
