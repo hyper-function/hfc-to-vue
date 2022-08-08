@@ -58,11 +58,6 @@ export default function (Vue: typeof IVue) {
           }[]
         >([]);
 
-        const isTeleportsChanged = ref(false);
-        watch(teleports, () => {
-          isTeleportsChanged.value = true;
-        });
-
         function ctxToProps() {
           const attrs: Record<string, any> = {};
           const events: Record<string, any> = {};
@@ -126,14 +121,11 @@ export default function (Vue: typeof IVue) {
         });
 
         onBeforeUpdate(() => {
-          // update teleports should not trigger changed event
-          if (isTeleportsChanged.value) {
-            isTeleportsChanged.value = false;
-            return;
-          }
+          if (ctx.attrs.__used) return;
 
           const props = ctxToProps();
           hfc.changed(props);
+          ctx.attrs.__used = true;
         });
 
         onBeforeUnmount(() => {
