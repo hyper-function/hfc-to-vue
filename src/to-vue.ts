@@ -1,11 +1,19 @@
 import type IVue from "vue";
 
+interface TeleportItem {
+  key: string;
+  container: Element;
+  args: Record<string, any>;
+  slotFn: IVue.Slot;
+}
+
 export default function (Vue: typeof IVue) {
   const {
     h,
     ref,
-    watch,
     toRaw,
+    inject,
+    provide,
     isProxy,
     reactive,
     Teleport,
@@ -46,17 +54,23 @@ export default function (Vue: typeof IVue) {
       slotNameMap.set(name.replace(/[A-Z]/g, "-$&").toLowerCase(), name);
     }
 
+    const RenderTeleports = defineComponent(() => {
+      const teleports = inject<TeleportItem[]>("teleports", []);
+      return () =>
+        teleports.map((item) =>
+          h(
+            Teleport,
+            { to: item.container, key: item.key },
+            item.slotFn(item.args)
+          )
+        );
+    });
+
     return defineComponent({
       inheritAttrs: false,
       setup(_, ctx) {
-        const teleports = reactive<
-          {
-            key: string;
-            container: Element;
-            args: Record<string, any>;
-            slotFn: IVue.Slot;
-          }[]
-        >([]);
+        const teleports = reactive<TeleportItem[]>([]);
+        provide("teleports", teleports);
 
         function ctxToProps() {
           const attrs: Record<string, any> = {};
@@ -64,10 +78,7 @@ export default function (Vue: typeof IVue) {
           const slots: Record<string, any> = {};
           const others: Record<string, any> = {};
 
-          const keys = Object.keys(ctx.attrs);
-          for (let i = 0; i < keys.length; i++) {
-            const key = keys[i];
-
+          for (let key in ctx.attrs) {
             const attrName = attrNameMap.get(key);
             if (attrName) {
               let val = ctx.attrs[key] as any;
@@ -90,9 +101,7 @@ export default function (Vue: typeof IVue) {
             others[otherKey] = otherValue;
           }
 
-          const slotKeys = Object.keys(ctx.slots);
-          for (let i = 0; i < slotKeys.length; i++) {
-            const slotKey = slotKeys[i];
+          for (let slotKey in ctx.slots) {
             const slotName = slotNameMap.get(slotKey);
             if (!slotName) continue;
 
@@ -121,27 +130,15 @@ export default function (Vue: typeof IVue) {
         });
 
         onBeforeUpdate(() => {
-          if (ctx.attrs.__used) return;
-
           const props = ctxToProps();
           hfc.changed(props);
-          ctx.attrs.__used = true;
         });
 
         onBeforeUnmount(() => {
           hfc.disconnected();
         });
 
-        return () => [
-          h(HFC.tag, { ref: container }),
-          teleports.map((item) =>
-            h(
-              Teleport,
-              { to: item.container, key: item.key },
-              item.slotFn(item.args)
-            )
-          ),
-        ];
+        return () => [h(HFC.tag, { ref: container }), h(RenderTeleports)];
       },
     });
   };
