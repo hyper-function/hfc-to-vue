@@ -23,10 +23,10 @@ export default function (Vue: typeof IVue) {
     defineComponent,
   } = Vue;
 
-  return function hfcToVue(HFC: typeof HyperFunctionComponent) {
-    const attrNames = HFC.props[0];
-    const eventNames = HFC.props[1];
-    const slotNames = HFC.props[2];
+  return function hfcToVue(HFC: HyperFunctionComponent) {
+    const attrNames = HFC.names[0];
+    const eventNames = HFC.names[1];
+    const slotNames = HFC.names[2];
 
     const attrNameMap: Map<string, string> = new Map();
     for (let i = 0; i < attrNames.length; i++) {
@@ -122,11 +122,12 @@ export default function (Vue: typeof IVue) {
           return { attrs, events, others, slots };
         }
 
-        let hfc: HyperFunctionComponent;
+        let hfc: ReturnType<HyperFunctionComponent>;
         const container = ref<Element>();
         onMounted(() => {
           const props = ctxToProps();
-          hfc = new HFC(container.value!, props);
+          container.value!.setAttribute("data-hfc", HFC.hfc);
+          hfc = HFC(container.value!, props);
         });
 
         onBeforeUpdate(() => {
