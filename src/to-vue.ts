@@ -11,6 +11,7 @@ export default function (Vue: typeof IVue) {
   const {
     h,
     ref,
+    watch,
     toRaw,
     inject,
     provide,
@@ -72,35 +73,42 @@ export default function (Vue: typeof IVue) {
         const teleports = reactive<TeleportItem[]>([]);
         provide("teleports", teleports);
 
-        function ctxToProps() {
+        function getHfcAttrsAndEventsFromVueAttrs() {
           const attrs: Record<string, any> = {};
           const events: Record<string, any> = {};
-          const slots: Record<string, any> = {};
-          const others: Record<string, any> = {};
+          const _: Record<string, any> = {};
 
           for (let key in ctx.attrs) {
             const attrName = attrNameMap.get(key);
             if (attrName) {
-              let val = ctx.attrs[key] as any;
+              let val = ctx.attrs[key];
               if (isProxy(val)) val = toRaw(val);
               attrs[attrName] = val;
+              _[key] = val;
               continue;
             }
 
             const eventName = eventNameMap.get(key);
             if (eventName) {
-              events[eventName] = ctx.attrs[key] as any;
+              const val = ctx.attrs[key];
+              events[eventName] = val;
+              _[key] = val;
               continue;
             }
 
-            let otherKey = key;
-            const otherValue = ctx.attrs[key] as any;
-            if (typeof otherValue === "function") {
-              otherKey = key[2].toLowerCase() + key.slice(3);
-            }
-            others[otherKey] = otherValue;
+            let _key = key;
+            const val = ctx.attrs[key];
+            if (typeof val === "function")
+              _key = key[2].toLowerCase() + key.slice(3);
+
+            _[_key] = val;
           }
 
+          return { attrs, events, _ };
+        }
+
+        function getHfcSlotsFromVueSlots() {
+          const slots: Record<string, any> = {};
           for (let slotKey in ctx.slots) {
             const slotName = slotNameMap.get(slotKey);
             if (!slotName) continue;
@@ -119,21 +127,57 @@ export default function (Vue: typeof IVue) {
             };
           }
 
-          return { attrs, events, others, slots };
+          return slots;
         }
 
         let hfc: ReturnType<HyperFunctionComponent>;
+        let slots = getHfcSlotsFromVueSlots();
+        let prevSlotCount = Object.keys(ctx.slots).length;
+
         const container = ref<Element>();
         onMounted(() => {
-          const props = ctxToProps();
+          const { attrs, events, _ } = getHfcAttrsAndEventsFromVueAttrs();
+
           container.value!.setAttribute("data-hfc", HFC.hfc);
-          hfc = HFC(container.value!, props);
+          (container.value as any).hfcVer = HFC.ver;
+          hfc = HFC(container.value!, { attrs, events, slots, _ });
         });
 
+        function onHfcPropsChange() {
+          const { attrs, events, _ } = getHfcAttrsAndEventsFromVueAttrs();
+          hfc.changed({ attrs, events, slots, _ });
+        }
+
+        const deepWatch = ctx.attrs._shallow === undefined;
+
+        // this not fired when nested obj change
         onBeforeUpdate(() => {
-          const props = ctxToProps();
-          hfc.changed(props);
+          const slotLength = Object.keys(ctx.slots).length;
+          if (slotLength !== prevSlotCount) {
+            prevSlotCount = slotLength;
+            slots = getHfcSlotsFromVueSlots();
+            onHfcPropsChange();
+            return;
+          }
+
+          if (!deepWatch) onHfcPropsChange();
         });
+
+        if (deepWatch) {
+          watch(
+            () => ctx.attrs,
+            () => {
+              onHfcPropsChange();
+            },
+            { deep: true }
+          );
+        }
+
+        // slots is not reactive
+        // watch(
+        //   () => ctx.slots,
+        //   () => {}
+        // );
 
         onBeforeUnmount(() => {
           hfc.disconnected();

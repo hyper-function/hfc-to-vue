@@ -1,6 +1,7 @@
 import {
   h,
   ref,
+  watch,
   toRaw,
   inject,
   provide,
@@ -18,6 +19,7 @@ import toVue from "./to-vue.js";
 export default toVue({
   h,
   ref,
+  watch,
   toRaw,
   inject,
   provide,

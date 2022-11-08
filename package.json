@@ -14,16 +14,14 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "vue": "^3"
-  },
   "devDependencies": {
     "@types/hyper-function-component": "^2.1.0",
-    "@vue/test-utils": "^2.0.0-rc.12",
-    "jest": "^27.0.6",
-    "typescript": "^4.7.4"
-  },
-  "jest": {
-    "transform": {}
+    "@vitejs/plugin-vue": "^3.2.0",
+    "@vue/test-utils": "^2.0.0",
+    "jsdom": "^20.0.2",
+    "typescript": "^4.7.4",
+    "vite": "^3.2.3",
+    "vitest": "^0.25.0",
+    "vue": "^3.2.41"
   }
 }
