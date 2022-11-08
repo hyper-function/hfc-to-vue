@@ -134,13 +134,23 @@ export default function (Vue: typeof IVue) {
         let slots = getHfcSlotsFromVueSlots();
         let prevSlotCount = Object.keys(ctx.slots).length;
 
+        const expose: any = {};
+        ctx.expose(expose);
         const container = ref<Element>();
         onMounted(() => {
           const { attrs, events, _ } = getHfcAttrsAndEventsFromVueAttrs();
 
+          if (ctx.attrs.id) container.value!.id = ctx.attrs.id as string;
           container.value!.setAttribute("data-hfc", HFC.hfc);
-          (container.value as any).hfcVer = HFC.ver;
+
           hfc = HFC(container.value!, { attrs, events, slots, _ });
+
+          expose.hfc = (container.value as any).hfc = {
+            name: HFC.name,
+            version: HFC.ver,
+            instance: hfc,
+            methods: hfc.methods,
+          };
         });
 
         function onHfcPropsChange() {

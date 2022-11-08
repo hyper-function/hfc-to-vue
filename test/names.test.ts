@@ -1,4 +1,4 @@
-/// <reference types="hyper-function-component" />
+/// <reference types="../src/hfc" />
 import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
 
@@ -11,6 +11,7 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(container, props) {
   });
 
   return {
+    methods: {},
     changed() {},
     disconnected() {},
   };
@@ -56,6 +57,7 @@ DemoHfc.names = [
   ],
   ["onClick", "click", "onDbClick", "onPress", "onDbPress", "onTouch"],
   ["default", "header", "topNav", "actionBar"],
+  [],
 ];
 
 test("pass attrs and events", () => {

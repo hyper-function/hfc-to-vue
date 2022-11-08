@@ -1,4 +1,6 @@
-/// <reference types="hyper-function-component" />
+/// <reference types="../src/hfc" />
+/// <reference types="vitest/globals" />
+
 import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
@@ -12,6 +14,7 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(container, initProps) {
   render(initProps);
 
   return {
+    methods: {},
     changed(props) {
       render(props);
     },
@@ -22,7 +25,7 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(container, initProps) {
 DemoHfc.tag = "strong";
 DemoHfc.ver = "1.0.0";
 DemoHfc.hfc = "demo-hfc";
-DemoHfc.names = [["a", "b", "c", "d"], [], []];
+DemoHfc.names = [["a", "b", "c", "d"], [], [], []];
 
 test("pass attrs", async () => {
   const Hfc = hfcToVue(DemoHfc);

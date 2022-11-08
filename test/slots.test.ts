@@ -1,4 +1,4 @@
-/// <reference types="hyper-function-component" />
+/// <reference types="../src/hfc" />
 import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
@@ -43,6 +43,7 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(container, props) {
 
   renderSlot(props);
   return {
+    methods: {},
     changed(props) {
       renderSlot(props);
     },
@@ -53,7 +54,7 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(container, props) {
 DemoHfc.tag = "strong";
 DemoHfc.ver = "1.0.0";
 DemoHfc.hfc = "demo-hfc";
-DemoHfc.names = [[], [], ["default", "header", "footer"]];
+DemoHfc.names = [[], [], ["default", "header", "footer"], []];
 
 test("pass slots", async () => {
   const Hfc = hfcToVue(DemoHfc);

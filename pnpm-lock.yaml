@@ -1,7 +1,6 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@types/hyper-function-component': ^2.1.0
   '@vitejs/plugin-vue': ^3.2.0
   '@vue/test-utils': ^2.0.0
   jsdom: ^20.0.2
@@ -11,7 +10,6 @@ specifiers:
   vue: ^3.2.41
 
 devDependencies:
-  '@types/hyper-function-component': 2.1.0
   '@vitejs/plugin-vue': 3.2.0_vite@3.2.3+vue@3.2.41
   '@vue/test-utils': 2.2.1_vue@3.2.41
   jsdom: 20.0.2
@@ -80,10 +78,6 @@ packages:
 
   /@types/chai/4.3.3:
     resolution: {integrity: sha512-hC7OMnszpxhZPduX+m+nrx+uFoLkWOMiR4oa/AZF3MuSETYTZmFfJAHqZEM8MVlvfG7BEUcgvtwoCTxBp6hm3g==}
-    dev: true
-
-  /@types/hyper-function-component/2.1.0:
-    resolution: {integrity: sha512-9lBw/0Qqec0hVnSk0AjybnAcGim9hZPydohEN1InBCFphLKv8HoqP2gLGhAjWfQtwNyCqE1UpGMaYPq2bq+/jA==}
     dev: true
 
   /@types/node/18.11.9:
