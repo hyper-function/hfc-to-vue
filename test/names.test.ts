@@ -1,4 +1,5 @@
 /// <reference types="../src/hfc" />
+import { test, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
 

@@ -136,6 +136,7 @@ export default function (Vue: typeof IVue) {
 
         const expose: any = {};
         ctx.expose(expose);
+
         const container = ref<Element>();
         onMounted(() => {
           const { attrs, events, _ } = getHfcAttrsAndEventsFromVueAttrs();
@@ -145,8 +146,9 @@ export default function (Vue: typeof IVue) {
 
           hfc = HFC(container.value!, { attrs, events, slots, _ });
 
+          expose.container = container.value;
           expose.hfc = (container.value as any).hfc = {
-            name: HFC.name,
+            name: HFC.hfc,
             version: HFC.ver,
             instance: hfc,
             methods: hfc.methods,

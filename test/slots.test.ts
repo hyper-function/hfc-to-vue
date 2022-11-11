@@ -1,12 +1,13 @@
 /// <reference types="../src/hfc" />
 import { nextTick } from "vue";
+import { test, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
 
 const DemoHfc: HyperFunctionComponent = function DemoHfc(container, props) {
-  let defaultSlot: HTMLElement;
-  let headerSlot: HTMLElement;
-  let footerSlot: HTMLElement;
+  let defaultSlot: HTMLElement | undefined;
+  let headerSlot: HTMLElement | undefined;
+  let footerSlot: HTMLElement | undefined;
 
   let renderCount = 0;
   function renderSlot(ps: HfcProps) {
@@ -17,7 +18,10 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(container, props) {
       }
       ps.slots.default(defaultSlot);
     } else {
-      if (defaultSlot) defaultSlot.remove();
+      if (defaultSlot) {
+        defaultSlot.remove();
+        defaultSlot = undefined;
+      }
     }
 
     if (ps.slots.header) {
@@ -27,7 +31,10 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(container, props) {
       }
       ps.slots.header(headerSlot);
     } else {
-      if (headerSlot) headerSlot.remove();
+      if (headerSlot) {
+        headerSlot.remove();
+        headerSlot = undefined;
+      }
     }
 
     if (ps.slots.footer) {
@@ -37,7 +44,10 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(container, props) {
       }
       ps.slots.footer(footerSlot, { count: ++renderCount });
     } else {
-      if (footerSlot) footerSlot.remove();
+      if (footerSlot) {
+        footerSlot.remove();
+        footerSlot = undefined;
+      }
     }
   }
 

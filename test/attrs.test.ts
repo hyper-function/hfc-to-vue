@@ -1,6 +1,5 @@
 /// <reference types="../src/hfc" />
-/// <reference types="vitest/globals" />
-
+import { test, expect } from "vitest";
 import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
@@ -35,7 +34,6 @@ test("pass attrs", async () => {
     },
     template: `
       <hfc :a="a" :b="b" :c="c" :d="d" />
-      <div>{{d.e.f}}</div>
     `,
     components: { Hfc },
     methods: {
