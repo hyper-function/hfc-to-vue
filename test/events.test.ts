@@ -25,7 +25,7 @@ test("pass events", async () => {
       return { clicked: 0 };
     },
     template: `
-      <hfc @onClick="onClick"></hfc>
+      <hfc @onClick="onClick" @onHover="onClick" @onmove="onClick"></hfc>
       <div v-if="clicked > 0">clicked {{clicked}}</div>
     `,
     methods: {

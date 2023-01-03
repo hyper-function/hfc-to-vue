@@ -92,7 +92,7 @@ export default function (Vue: typeof IVue) {
             if (eventName) {
               const val = ctx.attrs[key];
               events[eventName] = val;
-              _[key] = val;
+              _[eventName] = val;
               continue;
             }
 
