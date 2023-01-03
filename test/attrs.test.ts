@@ -33,7 +33,17 @@ test("pass attrs", async () => {
       return { a: 1, b: "b", c: [1], d: { e: { f: 2 } } };
     },
     template: `
-      <hfc :a="a" :b="b" :c="c" :d="d" />
+      <hfc
+        id="abs"
+        class="a"
+        :class="['b']"
+        style="font-size: 14px"
+        :style="{ fontWeight: '800' }"
+        :a="a"
+        :b="b"
+        :c="c"
+        :d="d"
+      />
     `,
     components: { Hfc },
     methods: {
@@ -46,6 +56,9 @@ test("pass attrs", async () => {
     },
   });
 
+  expect(wrapper.html()).include("id=\"abs\"");
+  expect(wrapper.html()).include("class=\"a b\"");
+  expect(wrapper.html()).include(`style="font-size: 14px; font-weight: 800;"`);
   expect(wrapper.html()).include("a: 1, b: b, c: 1, d: 2");
 
   wrapper.setData({ a: 2 });

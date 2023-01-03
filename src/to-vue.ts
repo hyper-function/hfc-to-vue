@@ -70,6 +70,7 @@ export default function (Vue: typeof IVue) {
     return defineComponent({
       inheritAttrs: false,
       setup(_, ctx) {
+        const container = ref<HTMLElement>();
         const teleports = reactive<TeleportItem[]>([]);
         provide("teleports", teleports);
 
@@ -130,6 +131,20 @@ export default function (Vue: typeof IVue) {
           return slots;
         }
 
+        function setupCommonAttrs() {
+          if (ctx.attrs.id) {
+            container.value!.id = ctx.attrs.id as string;
+          }
+
+          if (ctx.attrs.class) {
+            container.value!.className = ctx.attrs.class as string;
+          }
+
+          if (ctx.attrs.style) {
+            Object.assign(container.value!.style, ctx.attrs.style);
+          }
+        }
+
         let hfc: ReturnType<HyperFunctionComponent>;
         let slots = getHfcSlotsFromVueSlots();
         let prevSlotCount = Object.keys(ctx.slots).length;
@@ -137,12 +152,11 @@ export default function (Vue: typeof IVue) {
         const expose: any = {};
         ctx.expose(expose);
 
-        const container = ref<Element>();
         onMounted(() => {
           const { attrs, events, _ } = getHfcAttrsAndEventsFromVueAttrs();
 
-          if (ctx.attrs.id) container.value!.id = ctx.attrs.id as string;
           container.value!.setAttribute("data-hfc", HFC.hfc);
+          setupCommonAttrs();
 
           hfc = HFC(container.value!, { attrs, events, slots, _ });
 
@@ -156,6 +170,7 @@ export default function (Vue: typeof IVue) {
         });
 
         function onHfcPropsChange() {
+          setupCommonAttrs();
           const { attrs, events, _ } = getHfcAttrsAndEventsFromVueAttrs();
           hfc.changed({ attrs, events, slots, _ });
         }
