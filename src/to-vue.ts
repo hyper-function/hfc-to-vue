@@ -155,7 +155,7 @@ export default function (Vue: typeof IVue) {
         onMounted(() => {
           const { attrs, events, _ } = getHfcAttrsAndEventsFromVueAttrs();
 
-          container.value!.setAttribute("data-hfc", HFC.hfc);
+          container.value!.setAttribute("hfc-" + HFC.hfc, "");
           setupCommonAttrs();
 
           hfc = HFC(container.value!, { attrs, events, slots, _ });
