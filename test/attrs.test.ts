@@ -57,7 +57,7 @@ test("pass attrs", async () => {
   });
 
   expect(wrapper.html()).include("id=\"abs\"");
-  expect(wrapper.html()).include("class=\"a b\"");
+  expect(wrapper.html()).include("class=\"a b -hfc-demo-hfc\"");
   expect(wrapper.html()).include(`style="font-size: 14px; font-weight: 800;"`);
   expect(wrapper.html()).include("a: 1, b: b, c: 1, d: 2");
 

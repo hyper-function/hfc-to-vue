@@ -122,7 +122,7 @@ test("pass attrs and events", () => {
 
   const html = wrapper.html();
   expect(html).include("</strong>");
-  expect(html).include('data-hfc="demo-hfc"');
+  expect(html).include('-hfc-demo-hfc');
 
   const hfcProps = JSON.parse(wrapper.get("strong").text());
   expect(hfcProps.attrs.a).equal("1");
@@ -171,7 +171,6 @@ test("pass attrs and events", () => {
   expect(hfcProps.slots).contains("topNav");
   expect(hfcProps.slots).contains("actionBar");
 
-  expect(hfcProps._).contains("a");
   expect(hfcProps._).contains("nb");
   expect(hfcProps._).contains("nBa");
   expect(hfcProps._).contains("n-b-c");

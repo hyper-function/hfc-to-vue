@@ -85,7 +85,6 @@ export default function (Vue: typeof IVue) {
               let val = ctx.attrs[key];
               if (isProxy(val)) val = toRaw(val);
               attrs[attrName] = val;
-              _[key] = val;
               continue;
             }
 
@@ -93,7 +92,6 @@ export default function (Vue: typeof IVue) {
             if (eventName) {
               const val = ctx.attrs[key];
               events[eventName] = val;
-              _[eventName] = val;
               continue;
             }
 
@@ -155,8 +153,8 @@ export default function (Vue: typeof IVue) {
         onMounted(() => {
           const { attrs, events, _ } = getHfcAttrsAndEventsFromVueAttrs();
 
-          container.value!.setAttribute("hfc-" + HFC.hfc, "");
           setupCommonAttrs();
+          container.value!.classList.add("-hfc-" + HFC.hfc);
 
           hfc = HFC(container.value!, { attrs, events, slots, _ });
 
