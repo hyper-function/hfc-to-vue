@@ -46,30 +46,26 @@ test("pass attrs", async () => {
       />
     `,
     components: { Hfc },
-    methods: {
-      changeArr() {
-        this.c = [2];
-      },
-      changeObj() {
-        this.d.e.f = 3;
-      },
-    },
   });
 
-  expect(wrapper.html()).include("id=\"abs\"");
-  expect(wrapper.html()).include("class=\"a b -hfc-demo-hfc\"");
+  expect(wrapper.html()).include('id="abs"');
+  expect(wrapper.html()).include('class="a b"');
   expect(wrapper.html()).include(`style="font-size: 14px; font-weight: 800;"`);
   expect(wrapper.html()).include("a: 1, b: b, c: 1, d: 2");
 
-  wrapper.setData({ a: 2 });
+  wrapper.vm.$data.a = 2;
   await nextTick();
   expect(wrapper.html()).include("a: 2, b: b, c: 1, d: 2");
 
-  wrapper.vm.changeArr();
+  wrapper.vm.$data.c[0] = 2;
   await nextTick();
   expect(wrapper.html()).include("a: 2, b: b, c: 2, d: 2");
 
-  wrapper.vm.changeObj();
+  wrapper.vm.$data.d = {
+    e: {
+      f: 3,
+    },
+  };
   await nextTick();
   expect(wrapper.html()).include("a: 2, b: b, c: 2, d: 3");
 });

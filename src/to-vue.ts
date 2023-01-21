@@ -1,4 +1,5 @@
 import type IVue from "vue";
+import { onBeforeUpdate, watch } from "vue";
 
 interface TeleportItem {
   key: string;
@@ -11,7 +12,6 @@ export default function (Vue: typeof IVue) {
   const {
     h,
     ref,
-    watch,
     toRaw,
     inject,
     provide,
@@ -19,7 +19,6 @@ export default function (Vue: typeof IVue) {
     reactive,
     Teleport,
     onMounted,
-    onBeforeUpdate,
     onBeforeUnmount,
     defineComponent,
   } = Vue;
@@ -69,45 +68,50 @@ export default function (Vue: typeof IVue) {
 
     return defineComponent({
       inheritAttrs: false,
-      setup(_, ctx) {
+      setup(__, ctx) {
         const container = ref<HTMLElement>();
+
         const teleports = reactive<TeleportItem[]>([]);
         provide("teleports", teleports);
 
-        function getHfcAttrsAndEventsFromVueAttrs() {
-          const attrs: Record<string, any> = {};
-          const events: Record<string, any> = {};
-          const _: Record<string, any> = {};
+        let attrs: Record<string, any> = {};
+        let events: Record<string, any> = {};
+        let slots: Record<string, any> = {};
+        let _: Record<string, any> = {};
 
+        let hfc = ref<ReturnType<HyperFunctionComponent>>();
+        const forceUpdate = ref(0);
+
+        ctx.expose({
+          container,
+          hfc,
+          HFC,
+        });
+
+        function parseAttrs() {
+          attrs = {};
+          events = {};
+          _ = {};
           for (let key in ctx.attrs) {
+            const val = ctx.attrs[key];
             const attrName = attrNameMap.get(key);
             if (attrName) {
-              let val = ctx.attrs[key];
-              if (isProxy(val)) val = toRaw(val);
-              attrs[attrName] = val;
+              attrs[attrName] = isProxy(val) ? toRaw(val) : val;
               continue;
             }
 
             const eventName = eventNameMap.get(key);
             if (eventName) {
-              const val = ctx.attrs[key];
               events[eventName] = val;
               continue;
             }
 
-            let _key = key;
-            const val = ctx.attrs[key];
-            if (typeof val === "function")
-              _key = key[2].toLowerCase() + key.slice(3);
-
-            _[_key] = val;
+            _[key] = val;
           }
-
-          return { attrs, events, _ };
         }
 
-        function getHfcSlotsFromVueSlots() {
-          const slots: Record<string, any> = {};
+        function parseSlots() {
+          slots = {};
           for (let slotKey in ctx.slots) {
             const slotName = slotNameMap.get(slotKey);
             if (!slotName) continue;
@@ -116,7 +120,12 @@ export default function (Vue: typeof IVue) {
             slots[slotName] = function (container: Element, args?: any) {
               args = args || {};
               const slotKey = args.key || slotName;
-              const teleport = { key: slotKey, args, container, slotFn: slot };
+              const teleport = {
+                key: slotKey,
+                args,
+                container,
+                slotFn: slot,
+              };
 
               const index = teleports.findIndex((item) => item.key === slotKey);
 
@@ -125,90 +134,41 @@ export default function (Vue: typeof IVue) {
                 : (teleports[index] = teleport);
             };
           }
-
-          return slots;
         }
 
-        function setupCommonAttrs() {
-          if (ctx.attrs.id) {
-            container.value!.id = ctx.attrs.id as string;
-          }
-
-          if (ctx.attrs.class) {
-            container.value!.className = ctx.attrs.class as string;
-          }
-
-          if (ctx.attrs.style) {
-            Object.assign(container.value!.style, ctx.attrs.style);
-          }
-        }
-
-        let hfc: ReturnType<HyperFunctionComponent>;
-        let slots = getHfcSlotsFromVueSlots();
-        let prevSlotCount = Object.keys(ctx.slots).length;
-
-        const expose: any = {};
-        ctx.expose(expose);
+        parseAttrs();
+        parseSlots();
 
         onMounted(() => {
-          const { attrs, events, _ } = getHfcAttrsAndEventsFromVueAttrs();
-
-          setupCommonAttrs();
-          container.value!.classList.add("-hfc-" + HFC.hfc);
-
-          hfc = HFC(container.value!, { attrs, events, slots, _ });
-
-          expose.container = container.value;
-          expose.hfc = (container.value as any).hfc = {
-            name: HFC.hfc,
-            version: HFC.ver,
-            instance: hfc,
-            methods: hfc.methods,
-          };
+          hfc.value = HFC(container.value!, { attrs, events, slots, _ });
+          container.value!.setAttribute("hfc", HFC.hfc);
+          (container.value as any).hfc = hfc.value;
+          (container.value as any).HFC = HFC;
         });
 
-        function onHfcPropsChange() {
-          setupCommonAttrs();
-          const { attrs, events, _ } = getHfcAttrsAndEventsFromVueAttrs();
-          hfc.changed({ attrs, events, slots, _ });
-        }
+        onBeforeUnmount(() => {
+          hfc.value!.disconnected();
+        });
 
-        const deepWatch = ctx.attrs._shallow === undefined;
-
-        // this not fired when nested obj change
         onBeforeUpdate(() => {
-          const slotLength = Object.keys(ctx.slots).length;
-          if (slotLength !== prevSlotCount) {
-            prevSlotCount = slotLength;
-            slots = getHfcSlotsFromVueSlots();
-            onHfcPropsChange();
-            return;
-          }
+          parseAttrs();
+          parseSlots();
 
-          if (!deepWatch) onHfcPropsChange();
+          hfc.value?.changed({ attrs, events, slots, _ });
         });
 
-        if (deepWatch) {
+        if (!ctx.attrs["no-dw"]) {
           watch(
             () => ctx.attrs,
-            () => {
-              onHfcPropsChange();
-            },
+            () => forceUpdate.value++,
             { deep: true }
           );
         }
 
-        // slots is not reactive
-        // watch(
-        //   () => ctx.slots,
-        //   () => {}
-        // );
-
-        onBeforeUnmount(() => {
-          hfc.disconnected();
-        });
-
-        return () => [h(HFC.tag, { ref: container }), h(RenderTeleports)];
+        return function () {
+          forceUpdate.value;
+          return [h(HFC.tag, { ref: container, ..._ }), h(RenderTeleports)];
+        };
       },
     });
   };

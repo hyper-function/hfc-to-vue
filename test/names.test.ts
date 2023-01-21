@@ -122,7 +122,7 @@ test("pass attrs and events", () => {
 
   const html = wrapper.html();
   expect(html).include("</strong>");
-  expect(html).include('-hfc-demo-hfc');
+  expect(html).include('hfc="demo-hfc"');
 
   const hfcProps = JSON.parse(wrapper.get("strong").text());
   expect(hfcProps.attrs.a).equal("1");

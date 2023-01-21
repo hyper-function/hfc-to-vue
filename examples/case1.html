@@ -20,6 +20,9 @@
         @hello-world="count=3"
         @hekseww=""
         o="oo"
+        :ar="arr"
+        :obj="obj"
+        :obj1="obj1"
       >
         <template #default="{a}">HOST: {{a}}</template>
 
@@ -27,85 +30,98 @@
         <template #left-panel>left panel</template>
         <template #right-panel>right panel</template>
       </Comp>
+
+
+      <button @click="changeArr">changeArr</button>
+      <button @click="changeObj">changeObj</button>
+      <button @click="changeObj1">changeObj1</button>
     </div>
 
     <script type="importmap">
       {
         "imports": {
-          "vue": "https://cdn.jsdelivr.net/npm/vue@3.2.37/dist/vue.esm-browser.js"
+          "vue": "https://cdn.jsdelivr.net/npm/vue@3.2.45/dist/vue.esm-browser.js"
         }
       }
     </script>
     <script type="module">
       import hfcToVue from "../dist/index.js";
       import { createApp, h } from "vue";
-      class HFC {
-        static tag = "p";
-        static props = [
-          ["name", "firstName", "LastName", "fitstAndLastName", "count"],
-          ["helloWorld", "hello"],
-          ["default", "header", "leftPanel"],
-        ];
 
-        constructor(container, props) {
-          this.container = container;
+      function HFC(container, props) {
+        const header = document.createElement("header");
 
-          this.header = document.createElement("header");
+        let a = 3;
 
-          this.a = 3;
+        const div = document.createElement("h1");
+        props.slots.default(div, { __key: "1", a: a });
+        container.appendChild(div);
 
-          this.div = document.createElement("h1");
-          props.slots.default(this.div, { __key: "1", a: this.a });
-          container.appendChild(this.div);
+        const div2 = document.createElement("h1");
+        props.slots.default(div2, { __key: "2", a: a });
+        props.slots.default(div2, { __key: "2", a: a + 1 });
+        container.appendChild(div2);
 
-          this.div2 = document.createElement("h1");
-          props.slots.default(this.div2, { __key: "2", a: this.a });
-          props.slots.default(this.div2, { __key: "2", a: this.a + 1 });
-          container.appendChild(this.div2);
+        const span = document.createElement("span");
+        
 
-          this.span = document.createElement("span");
-          this.span.innerText = "HFC:" + props.attrs.count.number;
-          container.appendChild(this.span);
+        container.appendChild(span);
 
-          setTimeout(() => {
-            props.events.hello();
-          }, 1000);
-
-          // const t = setInterval(() => {
-          //   this.a += 1;
-          //   // if (a > 10) {
-          //   //   div.remove();
-
-          //   //   clearInterval(t);
-          //   //   return;
-          //   // }
-          //   props.slots.default(this.div, { a: this.a });
-          //   // props.attrs.count.number += 1;
-          // }, 1000);
-        }
-        changed(props) {
-          console.log("changed");
-          console.log(props);
-          props.slots.default(this.div, { a: this.a + 1 });
-          this.span.innerText = "HFC:" + props.attrs.count.number;
+        function render(props) {
+          props.slots.default(div, { a: a + 1 });
+          span.innerText = "HFC:" + props.attrs.count.number;
+          span.innerText +=  ` ARR: ${props._.ar[0]}`
+          span.innerText +=  ` OBJ: ${props._.obj.a.b}`
+          span.innerText +=  ` OBJ1: ${props._.obj1.v}`
 
           if (props.slots.header) {
-            props.slots.header(this.header);
-            this.container.appendChild(this.header);
-          } else {
-            if (this.header.isConnected) {
-              this.container.removeChild(this.header);
+              props.slots.header(header);
+              container.appendChild(header);
+            } else {
+              if (header.isConnected) {
+                container.removeChild(header);
+              }
             }
+        }
+
+        render(props)
+
+        return {
+          changed(props) {
+            console.log("changed");
+            render(props);
+          },
+          disconnected() {
+
           }
         }
-        disconnected() {}
       }
 
+      HFC.tag = 'p'
+      HFC.hfc = 'a-hfc'
+      HFC.ver = '1.0.0'
+      HFC.names = [
+        ["name", "firstName", "LastName", "fitstAndLastName", "count"],
+        ["helloWorld", "hello"],
+        ["default", "header", "leftPanel"],
+        []
+      ];
+
+      let i = 1
       const Comp = hfcToVue(HFC);
       createApp({
         data() {
           return {
             id: 0,
+            arr: [0],
+            obj: {
+              a: {
+                b: 1,
+              },
+            },
+            obj1: {
+              v: 0
+            },
             count: {
               number: 0,
             },
@@ -138,6 +154,24 @@
             console.log("call hello");
             this.count.number = 99;
           },
+          changeArr() {
+            console.log('change arr');
+            this.arr[0] = ++i;
+            // this.arr = [1]
+          },
+          changeObj() {
+            console.log('change obj');
+            this.obj.a.b = ++i;
+            // this.obj = {
+            //   a: {
+            //     b: ++i,
+            //   }
+            // }
+          },
+          changeObj1(){
+            console.log('change obj1');
+            this.obj1.v = ++i;
+          }
         },
         components: {
           Comp,
