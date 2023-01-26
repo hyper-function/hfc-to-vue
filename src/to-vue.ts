@@ -1,5 +1,4 @@
 import type IVue from "vue";
-import { onBeforeUpdate, watch } from "vue";
 
 interface TeleportItem {
   key: string;
@@ -13,12 +12,14 @@ export default function (Vue: typeof IVue) {
     h,
     ref,
     toRaw,
+    watch,
     inject,
     provide,
     isProxy,
     reactive,
     Teleport,
     onMounted,
+    onBeforeUpdate,
     onBeforeUnmount,
     defineComponent,
   } = Vue;
