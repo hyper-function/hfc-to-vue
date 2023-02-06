@@ -1,4 +1,5 @@
 import type IVue from "vue";
+import type { HyperFunctionComponent } from "hyper-function-component";
 
 interface TeleportItem {
   key: string;
@@ -80,14 +81,7 @@ export default function (Vue: typeof IVue) {
         let slots: Record<string, any> = {};
         let _: Record<string, any> = {};
 
-        let hfc = ref<ReturnType<HyperFunctionComponent>>();
         const forceUpdate = ref(0);
-
-        ctx.expose({
-          container,
-          hfc,
-          HFC,
-        });
 
         function parseAttrs() {
           attrs = {};
@@ -140,22 +134,30 @@ export default function (Vue: typeof IVue) {
         parseAttrs();
         parseSlots();
 
+        const hfc = HFC({ attrs, events, slots, _ });
+
+        ctx.expose({
+          container,
+          hfc,
+          HFC,
+        });
+
         onMounted(() => {
-          hfc.value = HFC(container.value!, { attrs, events, slots, _ });
           container.value!.setAttribute("hfc", HFC.hfc);
-          (container.value as any).hfc = hfc.value;
+          (container.value as any).hfc = hfc;
           (container.value as any).HFC = HFC;
+          hfc.connected(container.value!);
         });
 
         onBeforeUnmount(() => {
-          hfc.value!.disconnected();
+          hfc.disconnected();
         });
 
         onBeforeUpdate(() => {
           parseAttrs();
           parseSlots();
 
-          hfc.value?.changed({ attrs, events, slots, _ });
+          hfc.changed({ attrs, events, slots, _ });
         });
 
         if (!ctx.attrs["no-dw"]) {
