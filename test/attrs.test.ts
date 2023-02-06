@@ -1,19 +1,22 @@
-/// <reference types="../src/hfc" />
+import type { HyperFunctionComponent } from "hyper-function-component";
 import { test, expect } from "vitest";
 import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
 
-const DemoHfc: HyperFunctionComponent = function DemoHfc(container, initProps) {
-  function render(props: HfcProps) {
+const DemoHfc: HyperFunctionComponent = function DemoHfc(initProps) {
+  let target: Element;
+  function render(props: any) {
     const html = `a: ${props.attrs.a}, b: ${props.attrs.b}, c: ${props.attrs.c[0]}, d: ${props.attrs.d.e.f}`;
-    container.innerHTML = html;
+    target.innerHTML = html;
   }
-
-  render(initProps);
 
   return {
     methods: {},
+    connected(container) {
+      target = container;
+      render(initProps);
+    },
     changed(props) {
       render(props);
     },

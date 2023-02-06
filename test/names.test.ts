@@ -1,18 +1,19 @@
-/// <reference types="../src/hfc" />
+import type { HyperFunctionComponent } from "hyper-function-component";
 import { test, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
 
-const DemoHfc: HyperFunctionComponent = function DemoHfc(container, props) {
-  container.innerHTML = JSON.stringify({
-    attrs: props.attrs,
-    events: Object.keys(props.events),
-    slots: Object.keys(props.slots),
-    _: Object.keys(props._),
-  });
-
+const DemoHfc: HyperFunctionComponent = function DemoHfc(props) {
   return {
     methods: {},
+    connected(container) {
+      container.innerHTML = JSON.stringify({
+        attrs: props.attrs,
+        events: Object.keys(props.events),
+        slots: Object.keys(props.slots),
+        _: Object.keys(props._),
+      });
+    },
     changed() {},
     disconnected() {},
   };

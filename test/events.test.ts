@@ -1,13 +1,14 @@
-/// <reference types="../src/hfc" />
+import type { HyperFunctionComponent } from "hyper-function-component";
 import { test, expect } from "vitest";
 import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
 
-const DemoHfc: HyperFunctionComponent = function DemoHfc(container, initProps) {
+const DemoHfc: HyperFunctionComponent = function DemoHfc(initProps) {
   initProps.events.onClick({ count: 6 });
   return {
     methods: {},
+    connected(container) {},
     changed(props) {},
     disconnected() {},
   };

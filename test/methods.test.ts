@@ -1,15 +1,19 @@
-/// <reference types="../src/hfc" />
+import type { HyperFunctionComponent } from "hyper-function-component";
 import { test, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
 
-const DemoHfc: HyperFunctionComponent = function DemoHfc(container, initProps) {
+const DemoHfc: HyperFunctionComponent = function DemoHfc(initProps) {
+  let target: Element;
   return {
     methods: {
       show(args) {
         const duration = args!.duration;
-        container.innerHTML = "duration: " + duration;
+        target.innerHTML = "duration: " + duration;
       },
+    },
+    connected(container) {
+      target = container;
     },
     changed() {},
     disconnected() {},
