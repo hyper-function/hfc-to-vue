@@ -5,10 +5,11 @@ import { mount } from "@vue/test-utils";
 import hfcToVue from "../src";
 
 const DemoHfc: HyperFunctionComponent = function DemoHfc(initProps) {
-  initProps.events.onClick({ count: 6 });
   return {
     methods: {},
-    connected(container) {},
+    connected(container) {
+      initProps.events!.onClick({ count: 6 });
+    },
     changed(props) {},
     disconnected() {},
   };

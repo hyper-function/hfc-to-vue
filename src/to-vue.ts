@@ -1,12 +1,20 @@
 import type IVue from "vue";
-import type { HyperFunctionComponent } from "hyper-function-component";
+import type {
+  HyperFunctionComponent,
+  HfcSlotCallback,
+  HfcSlotOptions,
+} from "hyper-function-component";
 
-interface TeleportItem {
-  key: string;
-  container: Element;
-  args: Record<string, any>;
-  slotFn: IVue.Slot;
-}
+let uuid = 0;
+type SlotTeleports = Map<
+  Element,
+  {
+    key: string;
+    name: string;
+    slotFn: IVue.Slot;
+    args?: Record<string, any>;
+  }
+>;
 
 export default function (Vue: typeof IVue) {
   const {
@@ -56,15 +64,11 @@ export default function (Vue: typeof IVue) {
       slotNameMap.set(name.replace(/[A-Z]/g, "-$&").toLowerCase(), name);
     }
 
-    const RenderTeleports = defineComponent(() => {
-      const teleports = inject<TeleportItem[]>("teleports", []);
+    const TeleportRender = defineComponent(() => {
+      const teleports = inject<SlotTeleports>("teleports", new Map());
       return () =>
-        teleports.map((item) =>
-          h(
-            Teleport,
-            { to: item.container, key: item.key },
-            item.slotFn(item.args)
-          )
+        Array.from(teleports).map(([target, { slotFn, args, key }]) =>
+          h(Teleport, { to: target, key }, slotFn(args))
         );
     });
 
@@ -73,7 +77,7 @@ export default function (Vue: typeof IVue) {
       setup(__, ctx) {
         const container = ref<HTMLElement>();
 
-        const teleports = reactive<TeleportItem[]>([]);
+        const teleports = reactive<SlotTeleports>(new Map());
         provide("teleports", teleports);
 
         let attrs: Record<string, any> = {};
@@ -105,6 +109,14 @@ export default function (Vue: typeof IVue) {
           }
         }
 
+        const slotCache = new Map<
+          string,
+          {
+            origin: IVue.Slot;
+            transformed: HfcSlotCallback;
+          }
+        >();
+
         function parseSlots() {
           slots = {};
           for (let slotKey in ctx.slots) {
@@ -112,22 +124,43 @@ export default function (Vue: typeof IVue) {
             if (!slotName) continue;
 
             const slot = ctx.slots[slotKey]!;
-            slots[slotName] = function (container: Element, args?: any) {
-              args = args || {};
-              const slotKey = args.key || slotName;
-              const teleport = {
-                key: slotKey,
-                args,
-                container,
+
+            const cache = slotCache.get(slotKey);
+            if (cache) {
+              if (cache.origin === slot) {
+                slots[slotName] = cache.transformed;
+                continue;
+              }
+            }
+
+            slots[slotName] = function (hfcSlot: HfcSlotOptions) {
+              let key = "k" + uuid++;
+
+              teleports.set(hfcSlot.target, {
+                key,
+                name: slotName,
                 slotFn: slot,
+                args: hfcSlot.args,
+              });
+
+              hfcSlot.changed = function () {
+                teleports.set(hfcSlot.target, {
+                  key,
+                  name: slotName,
+                  slotFn: slot,
+                  args: hfcSlot.args,
+                });
               };
 
-              const index = teleports.findIndex((item) => item.key === slotKey);
-
-              index === -1
-                ? teleports.push(teleport)
-                : (teleports[index] = teleport);
+              hfcSlot.removed = function () {
+                teleports.delete(hfcSlot.target);
+              };
             };
+
+            slotCache.set(slotKey, {
+              origin: slot,
+              transformed: slots[slotName],
+            });
           }
         }
 
@@ -170,7 +203,7 @@ export default function (Vue: typeof IVue) {
 
         return function () {
           forceUpdate.value;
-          return [h(HFC.tag, { ref: container, ..._ }), h(RenderTeleports)];
+          return [h(HFC.tag, { ref: container, ..._ }), h(TeleportRender)];
         };
       },
     });

@@ -9,9 +9,9 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(props) {
     connected(container) {
       container.innerHTML = JSON.stringify({
         attrs: props.attrs,
-        events: Object.keys(props.events),
-        slots: Object.keys(props.slots),
-        _: Object.keys(props._),
+        events: Object.keys(props.events!),
+        slots: Object.keys(props.slots!),
+        _: Object.keys(props._!),
       });
     },
     changed() {},

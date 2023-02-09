@@ -1,4 +1,7 @@
-import type { HyperFunctionComponent } from "hyper-function-component";
+import type {
+  HyperFunctionComponent,
+  HfcSlotOptions,
+} from "hyper-function-component";
 import { nextTick } from "vue";
 import { test, expect } from "vitest";
 import { mount } from "@vue/test-utils";
@@ -6,47 +9,63 @@ import hfcToVue from "../src";
 
 const DemoHfc: HyperFunctionComponent = function DemoHfc(initProps) {
   let target: Element;
-  let defaultSlot: HTMLElement | undefined;
-  let headerSlot: HTMLElement | undefined;
-  let footerSlot: HTMLElement | undefined;
+  let defaultSlot: HfcSlotOptions | undefined;
+  let headerSlot: HfcSlotOptions | undefined;
+  let footerSlot: HfcSlotOptions | undefined;
 
   let renderCount = 0;
   function renderSlot(ps: any) {
     if (ps.slots.default) {
       if (!defaultSlot) {
-        defaultSlot = document.createElement("main");
-        target.append(defaultSlot);
+        defaultSlot = {
+          args: {},
+          target: document.createElement("main"),
+        };
+        target.append(defaultSlot.target);
       }
       ps.slots.default(defaultSlot);
     } else {
       if (defaultSlot) {
-        defaultSlot.remove();
+        defaultSlot.removed?.();
+        defaultSlot.target.remove();
         defaultSlot = undefined;
       }
     }
 
     if (ps.slots.header) {
       if (!headerSlot) {
-        headerSlot = document.createElement("header");
-        target.append(headerSlot);
+        headerSlot = {
+          args: {},
+          target: document.createElement("header"),
+        };
+        target.append(headerSlot.target);
       }
       ps.slots.header(headerSlot);
     } else {
       if (headerSlot) {
-        headerSlot.remove();
+        headerSlot.removed?.();
+        headerSlot.target.remove();
         headerSlot = undefined;
       }
     }
 
     if (ps.slots.footer) {
       if (!footerSlot) {
-        footerSlot = document.createElement("footer");
-        target.append(footerSlot);
+        footerSlot = {
+          args: { count: ++renderCount },
+          target: document.createElement("footer"),
+        };
+        target.append(footerSlot.target);
+      } else {
+        footerSlot.args!.count = ++renderCount;
+        footerSlot.changed?.();
       }
-      ps.slots.footer(footerSlot, { count: ++renderCount });
+
+      ps.slots.footer(footerSlot);
     } else {
       if (footerSlot) {
-        footerSlot.remove();
+        footerSlot.removed?.();
+        footerSlot.target.remove();
         footerSlot = undefined;
       }
     }
@@ -98,7 +117,7 @@ test("pass slots", async () => {
   await nextTick();
 
   const html1 = wrapper.html();
-  // console.log(html1);
+  console.log(html1);
   expect(html1).not.include("<header><h3>header slot</h3></header>");
   expect(html1).include("<footer><h5>2</h5></footer>");
 });
