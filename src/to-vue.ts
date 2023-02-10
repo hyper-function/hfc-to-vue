@@ -7,12 +7,11 @@ import type {
 
 let uuid = 0;
 type SlotTeleports = Map<
-  Element,
+  HfcSlotOptions,
   {
     key: string;
     name: string;
     slotFn: IVue.Slot;
-    args?: Record<string, any>;
   }
 >;
 
@@ -32,6 +31,15 @@ export default function (Vue: typeof IVue) {
     onBeforeUnmount,
     defineComponent,
   } = Vue;
+
+  const TeleportRender = defineComponent(() => {
+    const teleports = inject<SlotTeleports>("teleports", new Map());
+    return () => {
+      return Array.from(teleports).map(([{ target, args }, { slotFn, key }]) =>
+        h(Teleport, { to: target, key }, slotFn(args))
+      );
+    };
+  });
 
   return function hfcToVue(HFC: HyperFunctionComponent) {
     const attrNames = HFC.names[0];
@@ -63,14 +71,6 @@ export default function (Vue: typeof IVue) {
       slotNameMap.set(name.toLowerCase(), name);
       slotNameMap.set(name.replace(/[A-Z]/g, "-$&").toLowerCase(), name);
     }
-
-    const TeleportRender = defineComponent(() => {
-      const teleports = inject<SlotTeleports>("teleports", new Map());
-      return () =>
-        Array.from(teleports).map(([target, { slotFn, args, key }]) =>
-          h(Teleport, { to: target, key }, slotFn(args))
-        );
-    });
 
     return defineComponent({
       inheritAttrs: false,
@@ -109,58 +109,55 @@ export default function (Vue: typeof IVue) {
           }
         }
 
-        const slotCache = new Map<
-          string,
-          {
-            origin: IVue.Slot;
-            transformed: HfcSlotCallback;
-          }
-        >();
+        // slot cache not work, every time render will create new slot
+        // const slotCache = new Map<
+        //   string,
+        //   {
+        //     origin: IVue.Slot;
+        //     transformed: HfcSlotCallback;
+        //   }
+        // >();
 
         function parseSlots() {
           slots = {};
           for (let slotKey in ctx.slots) {
-            const slotName = slotNameMap.get(slotKey);
-            if (!slotName) continue;
+            const hfcSlotName = slotNameMap.get(slotKey);
+            if (!hfcSlotName) continue;
 
             const slot = ctx.slots[slotKey]!;
 
-            const cache = slotCache.get(slotKey);
-            if (cache) {
-              if (cache.origin === slot) {
-                slots[slotName] = cache.transformed;
-                continue;
-              }
-            }
+            // const cache = slotCache.get(slotKey);
+            // if (cache) {
+            //   if (cache.origin === slot) {
+            //     console.log("slot cached: " + hfcSlotName);
+            //     slots[hfcSlotName] = cache.transformed;
+            //     continue;
+            //   }
+            // }
 
-            slots[slotName] = function (hfcSlot: HfcSlotOptions) {
+            slots[hfcSlotName] = function (hfcSlot: HfcSlotOptions) {
               let key = "k" + uuid++;
 
-              teleports.set(hfcSlot.target, {
-                key,
-                name: slotName,
-                slotFn: slot,
-                args: hfcSlot.args,
-              });
-
-              hfcSlot.changed = function () {
-                teleports.set(hfcSlot.target, {
+              function renderSlot() {
+                teleports.set(hfcSlot, {
                   key,
-                  name: slotName,
+                  name: hfcSlotName!,
                   slotFn: slot,
-                  args: hfcSlot.args,
                 });
-              };
+              }
+              renderSlot();
+
+              hfcSlot.changed = renderSlot;
 
               hfcSlot.removed = function () {
-                teleports.delete(hfcSlot.target);
+                teleports.delete(hfcSlot);
               };
             };
 
-            slotCache.set(slotKey, {
-              origin: slot,
-              transformed: slots[slotName],
-            });
+            // slotCache.set(slotKey, {
+            //   origin: slot,
+            //   transformed: slots[hfcSlotName],
+            // });
           }
         }
 
@@ -203,7 +200,10 @@ export default function (Vue: typeof IVue) {
 
         return function () {
           forceUpdate.value;
-          return [h(HFC.tag, { ref: container, ..._ }), h(TeleportRender)];
+          return [
+            h(HFC.tag, { ref: container, ..._ }),
+            h(TeleportRender, { key: "hfcSlotRender" }),
+          ];
         };
       },
     });
