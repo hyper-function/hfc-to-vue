@@ -13,7 +13,7 @@ function buildHfcSlot(target: Element, args: any) {
     target,
     change(args) {
       this.args = args;
-      this.changed?.();
+      this.updated?.();
     },
     remove() {
       if (this.target.parentNode) {
@@ -58,7 +58,7 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(initProps) {
         initProps.slots!.footer(footerSlot);
       }
     },
-    changed(props) {
+    updated(props) {
       if (props.slots?.default) {
         if (props.slots.default !== slots.default) {
           if (defaultSlot) {

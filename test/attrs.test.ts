@@ -17,7 +17,7 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(initProps) {
       target = container;
       render(initProps);
     },
-    changed(props) {
+    updated(props) {
       render(props);
     },
     disconnected() {},

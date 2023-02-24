@@ -8,9 +8,9 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(initProps) {
   return {
     methods: {},
     connected(container) {
-      initProps.events!.onClick({ count: 6 });
+      initProps.events!.onClick!({ count: 6 });
     },
-    changed(props) {},
+    updated(props) {},
     disconnected() {},
   };
 };

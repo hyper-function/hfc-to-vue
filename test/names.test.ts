@@ -14,7 +14,7 @@ const DemoHfc: HyperFunctionComponent = function DemoHfc(props) {
         _: Object.keys(props._!),
       });
     },
-    changed() {},
+    updated() {},
     disconnected() {},
   };
 };

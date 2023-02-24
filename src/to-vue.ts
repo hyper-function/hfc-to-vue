@@ -1,7 +1,6 @@
 import type IVue from "vue";
 import type {
   HyperFunctionComponent,
-  HfcSlotCallback,
   HfcSlotOptions,
 } from "hyper-function-component";
 
@@ -147,7 +146,7 @@ export default function (Vue: typeof IVue) {
               }
               renderSlot();
 
-              hfcSlot.changed = renderSlot;
+              hfcSlot.updated = renderSlot;
 
               hfcSlot.removed = function () {
                 teleports.delete(hfcSlot);
@@ -187,7 +186,7 @@ export default function (Vue: typeof IVue) {
           parseAttrs();
           parseSlots();
 
-          hfc.changed({ attrs, events, slots, _ });
+          hfc.updated({ attrs, events, slots, _ });
         });
 
         if (!ctx.attrs["no-dw"]) {
